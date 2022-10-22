@@ -6,6 +6,7 @@ from ase.data.pubchem import pubchem_atoms_conformer_search
 
 from . import utils
 from .console import console
+from .xtb_optimize import get_coord_str, xtb_optimize
 
 available_types = click.Choice(["sdf", "xyz", "pdb"])
 
@@ -40,6 +41,7 @@ def from_formula(formula: str, output: Optional[str] = None):
 @click.option("--cid", type=int, default=None, help="PubChem CID")
 @click.option("--name", type=str, default=None, help="PubChem name")
 @click.option("--smiles", type=str, default=None, help="SMILES string")
+@click.option("-m", "--optimizemethod", default="mmff", help="Optimization method")
 @click.option("--show-info-only", is_flag=True, help="Show molecule info and exit.")
 @click.option("--all", "all_conformers", is_flag=True, default=False, help="Find all conformers")
 @click.option("-o", "--output", default=None, help="Output filename")
@@ -48,6 +50,7 @@ def from_pubchem(
     cid: Optional[int] = None,
     name: Optional[str] = None,
     smiles: Optional[str] = None,
+    optimizemethod: str = "mmff",
     show_info_only: bool = False,
     all_conformers: bool = False,
     output: Optional[str] = None,
@@ -67,7 +70,16 @@ def from_pubchem(
         output = f"{namespace}_{value}.xyz" if output is None else output
         # generate from canonical smiles
         mol = utils.mol_from_smiles(compound.canonical_smiles)
-        utils.write_mol(mol, filename, output_format)
+        if optimizemethod == "xtb":
+            console.print("Optimizing with xtb", style="info")
+            coords = get_coord_str(mol, output_format)
+            # This writes file directly
+            xtb_optimize(coords, filename, output_format)
+            console.print("Done.", style="info")
+            console.print(f"Writing molecule to {filename}", style="info")
+        else:
+            console.print(f"Writing molecule to {filename}", style="info")
+            utils.write_mol(mol, filename, output_format)
 
     else:
         if output_format != "xyz":
@@ -78,12 +90,20 @@ def from_pubchem(
         for i, atoms in enumerate(conformers):
             atoms.set_initial_charges(None)
             filename_i = utils.insert_index(filename, i)
-            atoms.write(filename_i)
+            if optimizemethod == "xtb":
+                console.print(f"Optimizing conformer {i} with xtb", style="info")
+                coords = get_coord_str(atoms, output_format)
+                # This writes file directly
+                xtb_optimize(coords, filename_i, output_format)
+            else:
+                atoms.write(filename_i)
+            console.print(f"Writing conformer {i} to {filename_i}", style="info")
 
 
 @app.command()
 @click.argument("smiles")
 @click.option("--optimize", default=True, help="Optimize geometry with force field")
+@click.option("-m", "--optimizemethod", default="mmff", help="Optimization method")
 @click.option("-o", "--output", type=str, default=None, help="Output filename")
 @click.option(
     "-f",
@@ -96,6 +116,7 @@ def from_pubchem(
 def from_smiles(
     smiles: str,
     optimize: bool,
+    optimizemethod: str,
     output: click.File,
     output_format: str,
 ):
@@ -106,5 +127,14 @@ def from_smiles(
     console.print("Generating molecule from smiles", style="info")
     mol = utils.mol_from_smiles(smiles, optimize)
     filename, output_format = utils.determine_output("smiles", smiles, output, output_format)
-    console.print(f"Writing molecule to {filename}", style="info")
-    utils.write_mol(mol, filename, output_format)
+
+    if optimizemethod == "xtb":
+        console.print("Optimizing with xtb", style="info")
+        coords = get_coord_str(mol, output_format)
+        # This writes file directly
+        xtb_optimize(coords, filename, output_format)
+        console.print("Done.", style="info")
+        console.print(f"Writing molecule to {filename}", style="info")
+    else:
+        console.print(f"Writing molecule to {filename}", style="info")
+        utils.write_mol(mol, filename, output_format)
