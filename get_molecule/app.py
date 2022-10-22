@@ -103,8 +103,8 @@ def from_smiles(
     You can optimize the molecular geometry with a force field,
     but this may be incorrect.
     """
-    console.print("Generating molecule from smiles", color=True)
+    console.print("Generating molecule from smiles", style="info")
     mol = utils.mol_from_smiles(smiles, optimize)
     filename, output_format = utils.determine_output("smiles", smiles, output, output_format)
-    console.print(f"Writing molecule to {filename}", color=True)
+    console.print(f"Writing molecule to {filename}", style="info")
     utils.write_mol(mol, filename, output_format)
