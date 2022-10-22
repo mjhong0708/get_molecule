@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "get-molecule"
-version = "0.1.1"
+version = "0.2.0"
 description = ""
 authors = ["mjhong0708 <mjhong0708@naver.com>"]
 readme = "README.md"
