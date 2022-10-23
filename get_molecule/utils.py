@@ -61,15 +61,29 @@ def pubchem_get_compound(namespace, value):
     return compound
 
 
+def mmff_optimize(mol):
+    AllChem.MMFFOptimizeMolecule(mol)
+    return mol
+
+
 def mol_from_smiles(smiles: str, optimize: bool = True):
     mol = Chem.MolFromSmiles(smiles)
     mol = Chem.AddHs(mol)
     AllChem.EmbedMolecule(mol)
     if optimize:
-        AllChem.MMFFOptimizeMolecule(mol)
+        mol = mmff_optimize(mol)
     console.print("Generated conformer with rdkit", style="info")
     console.print("[warning]Note[/warning]: this may not be correct.")
     return mol
+
+
+def read_mol(filename):
+    if filename.endswith(".sdf"):
+        return Chem.SDMolSupplier(filename)[0]
+    elif filename.endswith(".pdb"):
+        return Chem.MolFromPDBFile(filename)
+    else:
+        raise ValueError("File format not supported for RDKit.")
 
 
 def write_mol(mol, filename, output_format):

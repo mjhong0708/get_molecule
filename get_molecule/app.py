@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 import ase.build
@@ -138,3 +139,28 @@ def from_smiles(
     else:
         console.print(f"Writing molecule to {filename}", style="info")
         utils.write_mol(mol, filename, output_format)
+
+
+@app.command()
+@click.argument("inputfile", type=str)
+@click.option("-m", "--method", default="mmff", help="Optimization method")
+def optimize(inputfile, method):
+    """Optimize molecular geometry"""
+    inputfile = Path(inputfile)
+    fileformat = inputfile.suffix[1:]
+    if fileformat not in ("xyz", "pdb", "sdf"):
+        raise ValueError(f"File format {fileformat} not supported")
+    outputfile = inputfile.name + f"_opt.{fileformat}"
+    if method == "xtb":
+        console.print(f"Optimizing {inputfile} with xtb", style="info")
+        coords = inputfile.read_text()
+        xtb_optimize(coords, outputfile, fileformat)
+        console.print("Done.", style="info")
+    elif method == "mmff":
+        console.print(f"Optimizing {inputfile} with MMFF", style="info")
+        mol = utils.read_mol(str(inputfile))
+        mol = utils.mmff_optimize(mol)
+        utils.write_mol(mol, str(outputfile), fileformat)
+        console.print("Done.", style="info")
+    else:
+        raise ValueError("Invalid method. Must be 'xtb' or 'mmff'")
