@@ -150,7 +150,7 @@ def optimize(inputfile, method):
     fileformat = inputfile.suffix[1:]
     if fileformat not in ("xyz", "pdb", "sdf"):
         raise ValueError(f"File format {fileformat} not supported")
-    outputfile = inputfile.name + f"_opt.{fileformat}"
+    outputfile = inputfile.stem + f"_opt.{fileformat}"
     if method == "xtb":
         console.print(f"Optimizing {inputfile} with xtb", style="info")
         coords = inputfile.read_text()
